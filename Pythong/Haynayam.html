@@ -1,0 +1,2142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HaynAYAM: A Cellular Quest</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Space Mono', monospace;
+      background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+      min-height: 100vh;
+      color: white;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 900;
+      text-align: center;
+      margin: 20px 0;
+      background: linear-gradient(45deg, #00d4ff, #00ff88, #00d4ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 4px;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: clamp(14px, 2vw, 18px);
+      color: #00ff88;
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+
+    .game-wrapper {
+      display: flex;
+      gap: 30px;
+      max-width: 1600px;
+      margin: 0 auto;
+      align-items: flex-start;
+    }
+
+    .main-game {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .game-container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 20px;
+      padding: clamp(15px, 3vw, 25px);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(0, 212, 255, 0.3);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      width: fit-content;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(10, clamp(50px, 7vw, 70px));
+      grid-template-rows: repeat(10, clamp(50px, 7vw, 70px));
+      gap: 0;
+      position: relative;
+      background: linear-gradient(135deg, #f0f8e8 0%, #d4e8c1 100%);
+      border: clamp(4px, 1vw, 8px) solid #2c5364;
+      margin-bottom: 20px;
+      box-shadow: 0 0 40px rgba(0, 212, 255, 0.4);
+      width: fit-content;
+    }
+
+    .cell {
+      border: 1px solid rgba(100, 120, 100, 0.3);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(240, 248, 232, 0.9);
+      transition: all 0.3s;
+    }
+
+    .cell.green {
+      background: rgba(120, 200, 120, 0.4);
+      border-color: rgba(80, 150, 80, 0.5);
+    }
+
+    .cell.phase-g1 { 
+      background: rgba(255, 180, 180, 0.3); 
+      border-color: rgba(255, 107, 107, 0.5); 
+    }
+    .cell.phase-s { 
+      background: rgba(150, 200, 247, 0.3); 
+      border-color: rgba(77, 171, 247, 0.5); 
+    }
+    .cell.phase-g2 { 
+      background: rgba(255, 230, 150, 0.3); 
+      border-color: rgba(255, 212, 59, 0.5); 
+    }
+    .cell.phase-m { 
+      background: rgba(200, 150, 226, 0.3); 
+      border-color: rgba(138, 43, 226, 0.5); 
+    }
+
+    .number {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      font-size: clamp(8px, 1.5vw, 11px);
+      font-weight: bold;
+      color: #1a1a2e;
+      z-index: 1;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .tile-icon {
+      font-size: clamp(18px, 3vw, 24px);
+      position: absolute;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Apoptosis Icon */
+    .apoptosis-icon {
+      width: clamp(25px, 4.5vw, 35px);
+      height: clamp(25px, 4.5vw, 35px);
+      position: relative;
+    }
+
+    .apoptosis-cell {
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 30% 30%, #4dd4d4, #2a9d9d);
+      border-radius: 50%;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(77, 212, 212, 0.6);
+    }
+
+    .apoptosis-bubble {
+      position: absolute;
+      background: rgba(77, 212, 212, 0.3);
+      border: 2px solid #4dd4d4;
+      border-radius: 50%;
+    }
+
+    .bubble-1 { width: 10px; height: 10px; top: -5px; right: -3px; }
+    .bubble-2 { width: 7px; height: 7px; top: 8px; right: -6px; }
+    .bubble-3 { width: 8px; height: 8px; bottom: -4px; left: -2px; }
+    .bubble-4 { width: 6px; height: 6px; top: -3px; left: -5px; }
+
+    .apoptosis-nucleus {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Phase Badges */
+    .phase-badge {
+      width: clamp(30px, 5vw, 40px);
+      height: clamp(18px, 3vw, 22px);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: clamp(9px, 1.5vw, 11px);
+      font-family: 'Orbitron', sans-serif;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      border: 2px solid;
+    }
+
+    .phase-badge.g1 {
+      background: linear-gradient(135deg, #5c6ac4, #4a5bb8);
+      border-color: #7c8aff;
+      color: white;
+    }
+
+    .phase-badge.s {
+      background: linear-gradient(135deg, #00c853, #00a844);
+      border-color: #00ff6a;
+      color: white;
+    }
+
+    .phase-badge.g2 {
+      background: linear-gradient(135deg, #ffa726, #ff8f00);
+      border-color: #ffb74d;
+      color: white;
+    }
+
+    .phase-badge.m {
+      background: linear-gradient(135deg, #ff5722, #e64a19);
+      border-color: #ff7043;
+      color: white;
+    }
+
+    /* Power Question Icon */
+    .power-question-icon {
+      width: clamp(28px, 5vw, 38px);
+      height: clamp(28px, 5vw, 38px);
+      position: relative;
+    }
+
+    .power-arrow {
+      width: 0;
+      height: 0;
+      border-left: clamp(10px, 2vw, 15px) solid transparent;
+      border-right: clamp(10px, 2vw, 15px) solid transparent;
+      border-bottom: clamp(18px, 3vw, 25px) solid #4caf50;
+      position: absolute;
+      top: 0;
+      left: clamp(2px, 1vw, 4px);
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+
+    .power-question-mark {
+      position: absolute;
+      width: clamp(15px, 3vw, 20px);
+      height: clamp(15px, 3vw, 20px);
+      background: #e53935;
+      border-radius: 50%;
+      top: clamp(8px, 1.5vw, 10px);
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: clamp(10px, 2vw, 14px);
+      font-family: Arial, sans-serif;
+      box-shadow: 0 2px 6px rgba(229, 57, 53, 0.6);
+      border: 2px solid white;
+    }
+
+    /* Checkpoint Flag Icon */
+    .checkpoint-icon {
+      width: clamp(26px, 4.5vw, 35px);
+      height: clamp(28px, 5vw, 38px);
+      position: relative;
+    }
+
+    .flag-pole {
+      width: 3px;
+      height: 100%;
+      background: linear-gradient(to bottom, #757575, #424242);
+      position: absolute;
+      left: clamp(6px, 1.2vw, 8px);
+      border-radius: 2px;
+      box-shadow: 1px 0 2px rgba(0,0,0,0.3);
+    }
+
+    .flag-base {
+      width: 12px;
+      height: 5px;
+      background: #424242;
+      border-radius: 2px;
+      position: absolute;
+      bottom: 0;
+      left: 3px;
+    }
+
+    .flag-fabric {
+      width: clamp(16px, 3vw, 22px);
+      height: clamp(12px, 2.5vw, 16px);
+      background: linear-gradient(135deg, #ff5252 0%, #ff5252 50%, #ffffff 50%, #ffffff 100%);
+      position: absolute;
+      top: 2px;
+      left: clamp(9px, 1.8vw, 11px);
+      border-radius: 0 3px 3px 0;
+      box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .player {
+      width: clamp(20px, 3.5vw, 28px);
+      height: clamp(20px, 3.5vw, 28px);
+      border-radius: 50%;
+      position: absolute;
+      transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      z-index: 200;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      border: 3px solid white;
+      will-change: left, top;
+      pointer-events: none;
+    }
+
+    .ladder {
+      position: absolute;
+      pointer-events: none;
+      z-index: 40;
+    }
+
+    .controls {
+      display: flex;
+      gap: clamp(10px, 2vw, 20px);
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: clamp(10px, 2vw, 15px) clamp(20px, 4vw, 30px);
+      font-size: clamp(14px, 2.5vw, 18px);
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(135deg, #00d4ff, #00ff88);
+      border: none;
+      border-radius: 50px;
+      color: #0f2027;
+      font-family: 'Orbitron', sans-serif;
+      box-shadow: 0 6px 20px rgba(0, 212, 255, 0.4);
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 212, 255, 0.6);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    #info {
+      font-size: clamp(14px, 2.5vw, 20px);
+      text-align: center;
+      background: rgba(0, 212, 255, 0.2);
+      padding: clamp(12px, 2vw, 20px);
+      border-radius: 15px;
+      font-weight: bold;
+      border: 2px solid rgba(0, 212, 255, 0.4);
+      margin-top: 15px;
+    }
+
+    #diceDisplay {
+      font-size: clamp(48px, 8vw, 64px);
+      background: rgba(255, 255, 255, 0.1);
+      width: clamp(70px, 12vw, 90px);
+      height: clamp(70px, 12vw, 90px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 15px;
+      border: 3px solid #00d4ff;
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+    }
+
+    .player-info {
+      display: flex;
+      gap: clamp(10px, 2vw, 20px);
+      justify-content: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .player-card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: clamp(10px, 2vw, 15px) clamp(15px, 3vw, 25px);
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 1.5vw, 15px);
+      border: 2px solid transparent;
+      transition: all 0.3s;
+      backdrop-filter: blur(10px);
+    }
+
+    .player-card.active {
+      border-color: #00d4ff;
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+      transform: scale(1.05);
+    }
+
+    .player-indicator {
+      width: clamp(16px, 3vw, 20px);
+      height: clamp(16px, 3vw, 20px);
+      border-radius: 50%;
+      border: 2px solid white;
+    }
+
+    .player-card.p1 .player-indicator {
+      background: radial-gradient(circle at 30% 30%, #ff6b6b, #c92a2a);
+    }
+
+    .player-card.p2 .player-indicator {
+      background: radial-gradient(circle at 30% 30%, #4dabf7, #1971c2);
+    }
+
+    .player-card.p3 .player-indicator {
+      background: radial-gradient(circle at 30% 30%, #ffd43b, #f59f00);
+    }
+
+    .player-card.p4 .player-indicator {
+      background: radial-gradient(circle at 30% 30%, #51cf66, #2f9e44);
+    }
+
+    .player-card span {
+      font-weight: bold;
+      font-size: clamp(14px, 2.5vw, 18px);
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: clamp(280px, 40vw, 350px);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .card-section {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: clamp(12px, 2vw, 20px);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(0, 212, 255, 0.3);
+    }
+
+    .card-section h3 {
+      font-family: 'Orbitron', sans-serif;
+      color: #00ff88;
+      margin-bottom: 12px;
+      font-size: clamp(16px, 2.5vw, 20px);
+    }
+
+    .power-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 350px;
+      overflow-y: auto;
+    }
+
+    .power-card {
+      background: rgba(0, 212, 255, 0.1);
+      border: 2px solid #00d4ff;
+      border-radius: 10px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .power-card:hover:not(.used) {
+      background: rgba(0, 212, 255, 0.2);
+      transform: translateX(5px);
+    }
+
+    .power-card.used {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #555;
+    }
+
+    .power-card-name {
+      font-weight: bold;
+      color: #00ff88;
+      font-size: clamp(12px, 2vw, 14px);
+      margin-bottom: 4px;
+    }
+
+    .power-card-desc {
+      font-size: clamp(10px, 1.5vw, 11px);
+      color: #aaa;
+      line-height: 1.4;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      font-size: clamp(10px, 1.5vw, 11px);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-icon {
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border: 3px solid #00d4ff;
+      border-radius: 20px;
+      padding: clamp(20px, 4vw, 40px);
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 0 50px rgba(0, 212, 255, 0.5);
+      animation: modalSlide 0.3s ease-out;
+    }
+
+    @keyframes modalSlide {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-content h2 {
+      font-family: 'Orbitron', sans-serif;
+      color: #00ff88;
+      margin-bottom: 15px;
+      font-size: clamp(20px, 4vw, 28px);
+    }
+
+    .modal-content p {
+      font-size: clamp(14px, 2.5vw, 18px);
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
+
+    .question-text {
+      background: rgba(0, 212, 255, 0.1);
+      padding: clamp(12px, 2vw, 20px);
+      border-radius: 10px;
+      border-left: 4px solid #00d4ff;
+      margin: 15px 0;
+      font-size: clamp(14px, 2.5vw, 16px);
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .modal-buttons button {
+      flex: 1;
+      min-width: 110px;
+    }
+
+    .answer-input {
+      width: 100%;
+      padding: clamp(10px, 2vw, 15px);
+      font-size: clamp(14px, 2.5vw, 16px);
+      border: 2px solid #00d4ff;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      color: white;
+      font-family: 'Space Mono', monospace;
+      margin: 15px 0;
+    }
+
+    .answer-input:focus {
+      outline: none;
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+    }
+
+    @keyframes celebrate {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      25% { transform: scale(1.3) rotate(-10deg); }
+      75% { transform: scale(1.3) rotate(10deg); }
+    }
+
+    .winning {
+      animation: celebrate 0.5s ease-in-out infinite;
+    }
+
+    .use-card-btn {
+      background: linear-gradient(135deg, #00ff88, #00d4ff);
+      color: #0f2027;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: clamp(10px, 1.5vw, 12px);
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 6px;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .use-card-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+    }
+
+    .use-card-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .power-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+    }
+
+    .power-card-option {
+      background: rgba(0, 212, 255, 0.1);
+      border: 2px solid #00d4ff;
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+    }
+
+    .power-card-option:hover {
+      background: rgba(0, 212, 255, 0.3);
+      transform: scale(1.05);
+    }
+
+    .power-card-option-emoji {
+      font-size: clamp(24px, 4vw, 32px);
+      margin-bottom: 6px;
+    }
+
+    .power-card-option-name {
+      font-size: clamp(10px, 1.5vw, 12px);
+      font-weight: bold;
+      color: #00ff88;
+    }
+
+    /* Menu Screen Styles */
+    .menu-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .menu-screen.hidden {
+      display: none;
+    }
+
+    .menu-container {
+      background: rgba(255, 255, 255, 0.05);
+      border: 3px solid #00d4ff;
+      border-radius: 30px;
+      padding: clamp(30px, 5vw, 50px);
+      max-width: 700px;
+      width: 100%;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 0 60px rgba(0, 212, 255, 0.5);
+      text-align: center;
+    }
+
+    .menu-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(32px, 6vw, 48px);
+      font-weight: 900;
+      background: linear-gradient(45deg, #00d4ff, #00ff88, #00d4ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 15px;
+    }
+
+    .menu-subtitle {
+      color: #00ff88;
+      font-size: clamp(16px, 3vw, 20px);
+      margin-bottom: 30px;
+      font-weight: 700;
+    }
+
+    .menu-section {
+      margin: 25px 0;
+    }
+
+    .menu-section h3 {
+      font-family: 'Orbitron', sans-serif;
+      color: #00d4ff;
+      font-size: clamp(18px, 3vw, 22px);
+      margin-bottom: 20px;
+    }
+
+    .player-count-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .player-count-btn {
+      padding: clamp(12px, 2vw, 15px) clamp(20px, 3vw, 30px);
+      font-size: clamp(14px, 2.5vw, 18px);
+      font-weight: bold;
+      cursor: pointer;
+      background: rgba(0, 212, 255, 0.1);
+      border: 3px solid #00d4ff;
+      border-radius: 15px;
+      color: white;
+      font-family: 'Orbitron', sans-serif;
+      transition: all 0.3s;
+      min-width: 80px;
+    }
+
+    .player-count-btn:hover {
+      background: rgba(0, 212, 255, 0.3);
+      transform: scale(1.05);
+    }
+
+    .player-count-btn.selected {
+      background: linear-gradient(135deg, #00d4ff, #00ff88);
+      border-color: #00ff88;
+      color: #0f2027;
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+    }
+
+    .player-setup {
+      display: none;
+      margin-top: 30px;
+    }
+
+    .player-setup.active {
+      display: block;
+    }
+
+    .player-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0, 0, 0, 0.2);
+      padding: clamp(10px, 2vw, 15px) clamp(15px, 3vw, 25px);
+      border-radius: 15px;
+      margin-bottom: 12px;
+      border: 2px solid rgba(0, 212, 255, 0.3);
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .player-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(14px, 2.5vw, 18px);
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .player-color-indicator {
+      width: clamp(20px, 3vw, 25px);
+      height: clamp(20px, 3vw, 25px);
+      border-radius: 50%;
+      border: 3px solid white;
+      flex-shrink: 0;
+    }
+
+    .player-type-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .type-btn {
+      padding: clamp(8px, 1.5vw, 10px) clamp(15px, 2.5vw, 20px);
+      border: 2px solid #00d4ff;
+      background: rgba(0, 212, 255, 0.1);
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-weight: bold;
+      transition: all 0.3s;
+      font-size: clamp(12px, 2vw, 14px);
+    }
+
+    .type-btn:hover {
+      background: rgba(0, 212, 255, 0.2);
+    }
+
+    .type-btn.selected {
+      background: linear-gradient(135deg, #00ff88, #00d4ff);
+      color: #0f2027;
+      border-color: #00ff88;
+    }
+
+    .start-game-btn, .menu-main-btn {
+      margin-top: clamp(20px, 4vw, 40px);
+      padding: clamp(15px, 3vw, 20px) clamp(40px, 6vw, 60px);
+      font-size: clamp(18px, 3vw, 24px);
+      font-weight: 900;
+      background: linear-gradient(135deg, #00d4ff, #00ff88);
+      border: none;
+      border-radius: 50px;
+      color: #0f2027;
+      font-family: 'Orbitron', sans-serif;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0, 212, 255, 0.5);
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      width: 100%;
+    }
+
+    .menu-main-btn {
+      margin-top: 15px;
+      width: auto;
+    }
+
+    .start-game-btn:hover, .menu-main-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(0, 212, 255, 0.7);
+    }
+
+    .start-game-btn:active, .menu-main-btn:active {
+      transform: translateY(0);
+    }
+
+    .start-game-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 1200px) {
+      .game-wrapper {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .sidebar {
+        width: 100%;
+        max-width: 700px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      h1 {
+        margin: 10px 0;
+      }
+
+      .subtitle {
+        margin-bottom: 15px;
+      }
+
+      .player-row {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .legend {
+        font-size: 10px;
+      }
+
+      .modal-content ul {
+        padding-left: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main Menu Screen -->
+  <div class="menu-screen" id="mainMenuScreen">
+    <div class="menu-container">
+      <div class="menu-title">🧬 HaynAYAM 🧬</div>
+      <div class="menu-subtitle">A Cellular Quest</div>
+      <p style="color: #00ff88; margin-bottom: 30px; font-size: clamp(12px, 2vw, 14px);">Cell Division & Cell Cycle Board Game</p>
+
+      <div style="display: flex; flex-direction: column; gap: 15px; max-width: 400px; margin: 0 auto;">
+        <button class="menu-main-btn" onclick="showPlayerSelection()">
+          🎮 Start Game
+        </button>
+        <button class="menu-main-btn" onclick="showInstructions()">
+          📖 Instructions
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instructions Screen -->
+  <div class="menu-screen hidden" id="instructionsScreen">
+    <div class="menu-container" style="max-width: 800px; max-height: 85vh; overflow-y: auto;">
+      <div class="menu-title" style="font-size: clamp(28px, 5vw, 36px);">📖 Instructions</div>
+      
+      <div style="text-align: left; color: white; padding: clamp(10px, 2vw, 20px); font-size: clamp(12px, 2vw, 14px);">
+        <h3 style="color: #00ff88; margin-top: 15px; font-size: clamp(16px, 3vw, 18px);">Objective</h3>
+        <p style="line-height: 1.6;">Learn about cell division, cell cycle, and cell organelles by being the first player to reach tile 100!</p>
+
+        <h3 style="color: #00ff88; margin-top: 15px; font-size: clamp(16px, 3vw, 18px);">How to Play</h3>
+        <ul style="line-height: 1.8; padding-left: 20px;">
+          <li>Players take turns rolling the dice to move forward</li>
+          <li>Answer questions correctly to earn power-up cards</li>
+          <li>Use power-up cards strategically to gain advantages</li>
+        </ul>
+
+        <h3 style="color: #00ff88; margin-top: 15px; font-size: clamp(16px, 3vw, 18px);">Special Tiles</h3>
+        <ul style="line-height: 1.8; padding-left: 20px;">
+          <li><strong>🧬 DNA Ladder:</strong> Climb up to skip ahead</li>
+          <li><strong>💀 Apoptosis (Virus):</strong> Move down one tile (e.g., 15→6)</li>
+          <li><strong>⚡ Power Question:</strong> Answer correctly to get a random power-up card</li>
+          <li><strong>🚩 Checkpoint:</strong> Wrong answer = move 3 steps back</li>
+          <li><strong>G1, S, G2, M Phases:</strong> Answer correctly = move 1 tile forward</li>
+        </ul>
+
+        <h3 style="color: #00ff88; margin-top: 15px; font-size: clamp(16px, 3vw, 18px);">Power-Up Cards</h3>
+        <ul style="line-height: 1.8; padding-left: 20px;">
+          <li><strong>🧠 Wild Card:</strong> Use as any power-up</li>
+          <li><strong>⚡ Energy Up:</strong> Move 3 steps forward</li>
+          <li><strong>🛡️ Protect:</strong> Block next apoptosis</li>
+          <li><strong>🔄 Move (ER):</strong> Roll + 3 steps</li>
+          <li><strong>📦 Transport:</strong> Move 10 tiles up</li>
+          <li><strong>🍽️ Digest:</strong> Opponent moves 3 back</li>
+          <li><strong>🌿 Go Green:</strong> Jump to 3rd green tile</li>
+          <li><strong>🧬 Inherit:</strong> Move to opponent's position</li>
+          <li><strong>💧 Cytoplasm:</strong> Swap with opponent</li>
+        </ul>
+      </div>
+
+      <button class="start-game-btn" onclick="backToMainMenu()">Back to Menu</button>
+    </div>
+  </div>
+
+  <!-- Player Selection Screen -->
+  <div class="menu-screen hidden" id="playerSelectionScreen">
+    <div class="menu-container">
+      <div class="menu-title">🧬 HaynAYAM 🧬</div>
+      <div class="menu-subtitle">A Cellular Quest</div>
+
+      <div class="menu-section">
+        <h3>Select Number of Players</h3>
+        <div class="player-count-buttons">
+          <button class="player-count-btn" onclick="window.selectPlayerCount(2)">2 Players</button>
+          <button class="player-count-btn" onclick="window.selectPlayerCount(3)">3 Players</button>
+          <button class="player-count-btn" onclick="window.selectPlayerCount(4)">4 Players</button>
+        </div>
+      </div>
+
+      <div class="player-setup" id="playerSetup">
+        <div class="menu-section">
+          <h3>Configure Players</h3>
+          <div id="playerRows"></div>
+        </div>
+
+        <button class="start-game-btn" onclick="window.startGame()">Start Game</button>
+      </div>
+
+      <button class="menu-main-btn" onclick="backToMainMenu()" style="margin-top: 20px; padding: 10px 30px; font-size: clamp(14px, 2.5vw, 16px);">
+        ← Back
+      </button>
+    </div>
+  </div>
+
+  <h1>🧬 HaynAYAM 🧬</h1>
+  <p class="subtitle">A Cellular Quest - Cell Cycle & Cell Division</p>
+
+  <div class="game-wrapper">
+    <div class="main-game">
+      <div class="player-info">
+        <div class="player-card p1 active" id="p1-card">
+          <div class="player-indicator"></div>
+          <span>Player 1</span>
+        </div>
+        <div class="player-card p2" id="p2-card">
+          <div class="player-indicator"></div>
+          <span>Player 2</span>
+        </div>
+        <div class="player-card p3" id="p3-card" style="display: none;">
+          <div class="player-indicator"></div>
+          <span>Player 3</span>
+        </div>
+        <div class="player-card p4" id="p4-card" style="display: none;">
+          <div class="player-indicator"></div>
+          <span>Player 4</span>
+        </div>
+      </div>
+
+      <div class="game-container">
+        <div id="board"></div>
+      </div>
+
+      <div class="controls">
+        <div id="diceDisplay">🎲</div>
+        <button id="rollBtn" onclick="rollDice()">Roll Dice</button>
+        <button onclick="resetGame()">New Game</button>
+      </div>
+      
+      <div id="info">Select New Game to start</div>
+    </div>
+
+    <div class="sidebar">
+      <div class="card-section">
+        <h3>🎴 Power-Up Cards</h3>
+        <div class="power-cards" id="player-cards"></div>
+      </div>
+
+      <div class="card-section">
+        <h3>📋 Legend</h3>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-icon">
+              <div class="apoptosis-icon" style="transform: scale(0.7);">
+                <div class="apoptosis-cell">
+                  <div class="apoptosis-bubble bubble-1"></div>
+                  <div class="apoptosis-bubble bubble-2"></div>
+                  <div class="apoptosis-bubble bubble-3"></div>
+                  <div class="apoptosis-bubble bubble-4"></div>
+                  <div class="apoptosis-nucleus"></div>
+                </div>
+              </div>
+            </div>
+            <span>Apoptosis (move down 1 tile)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon">
+              <div class="power-question-icon" style="transform: scale(0.7);">
+                <div class="power-arrow"></div>
+                <div class="power-question-mark">?</div>
+              </div>
+            </div>
+            <span>Power-Up Question</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon">
+              <div class="checkpoint-icon" style="transform: scale(0.7);">
+                <div class="flag-pole"></div>
+                <div class="flag-base"></div>
+                <div class="flag-fabric"></div>
+              </div>
+            </div>
+            <span>Checkpoint</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon">
+              <div class="phase-badge g1" style="transform: scale(0.7);">G1</div>
+            </div>
+            <span>G1 Phase (move +1 tile if correct)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon">
+              <div class="phase-badge s" style="transform: scale(0.7);">S</div>
+            </div>
+            <span>S Phase</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon">
+              <div class="phase-badge g2" style="transform: scale(0.7);">G2</div>
+            </div>
+            <span>G2 Phase</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-icon">
+              <div class="phase-badge m" style="transform: scale(0.7);">M</div>
+            </div>
+            <span>M Phase</span>
+          </div>
+          <div class="legend-item">
+            <span style="margin-left: 40px;">🧬 DNA Ladder</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Modal -->
+  <div class="modal" id="questionModal">
+    <div class="modal-content">
+      <h2 id="modalTitle">Question</h2>
+      <div class="question-text" id="questionText"></div>
+      <input type="text" class="answer-input" id="answerInput" placeholder="Type your answer here...">
+      <div class="modal-buttons">
+        <button onclick="submitAnswer()">Submit</button>
+        <button onclick="skipQuestion()">Skip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Power-Up Selection Modal -->
+  <div class="modal" id="powerUpModal">
+    <div class="modal-content">
+      <h2>🎴 Choose Power-Up</h2>
+      <p>You answered correctly! Select one card:</p>
+      <div id="powerUpOptions" class="power-card-grid"></div>
+    </div>
+  </div>
+
+  <!-- Card Use Modal -->
+  <div class="modal" id="cardUseModal">
+    <div class="modal-content">
+      <h2 id="cardUseTitle">Use Card</h2>
+      <p id="cardUseText"></p>
+      <div class="modal-buttons" id="cardUseButtons"></div>
+    </div>
+  </div>
+
+  <!-- Victory Modal -->
+  <div class="modal" id="victoryModal">
+    <div class="modal-content" style="text-align: center;">
+      <h2 style="font-size: clamp(32px, 6vw, 48px); margin-bottom: 20px;">🎉 VICTORY! 🎉</h2>
+      <div style="font-size: clamp(64px, 10vw, 96px); margin: 30px 0;">🧬</div>
+      <p style="font-size: clamp(20px, 4vw, 32px); color: #00ff88; font-weight: bold;" id="winnerText">Player 1 Wins!</p>
+      <p style="font-size: clamp(14px, 2.5vw, 18px); margin-top: 20px;">Congratulations on completing the cellular quest!</p>
+      <div class="modal-buttons" style="margin-top: 30px;">
+        <button onclick="resetGame()" style="padding: 15px 40px;">New Game</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const board = document.getElementById("board");
+    const info = document.getElementById("info");
+    const rollBtn = document.getElementById("rollBtn");
+    const diceDisplay = document.getElementById("diceDisplay");
+
+    let currentPlayer = 1;
+    let positions = { 1: 1, 2: 1 };
+    let isAnimating = false;
+    let playerCards = { 1: [], 2: [] };
+    let currentQuestion = null;
+    let questionCallback = null;
+    let numPlayers = 2;
+    let playerTypes = { 1: 'human', 2: 'human' };
+    let playerColors = {
+      1: 'radial-gradient(circle at 30% 30%, #ff6b6b, #c92a2a)',
+      2: 'radial-gradient(circle at 30% 30%, #4dabf7, #1971c2)',
+      3: 'radial-gradient(circle at 30% 30%, #ffd43b, #f59f00)',
+      4: 'radial-gradient(circle at 30% 30%, #51cf66, #2f9e44)'
+    };
+
+    // Game configuration - DNA Ladders
+    const ladders = {
+      2: 38, 7: 14, 8: 31, 15: 26, 21: 42,
+      28: 84, 36: 44, 51: 67, 71: 91, 78: 98
+    };
+
+    // SCATTERED Apoptosis tiles - moves to tile directly below (one row down)
+    // Based on the actual game board layout
+    const apoptosis = {
+      12: 9, 19: 2, 27: 14, 42: 39,
+      48: 33, 56: 45, 64: 37, 73: 68, 82: 79,
+      89: 72, 97: 84
+    };
+
+    // Checkpoints
+    const checkpointTiles = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+    
+    const powerUpTiles = [5, 13, 23, 35, 45, 55, 65, 75, 85, 95];
+    
+    // Phase tiles - answer correctly to move 1 tile forward (per mechanics)
+    let phaseTiles = {
+      g1: { start: 6, end: 7 },
+      s: { start: 31, end: 32 },  
+      g2: { start: 54, end: 55 },
+      m: { start: 77, end: 78 }
+    };
+    
+    const greenTiles = [3, 9, 17, 25, 34, 41, 52, 63, 72, 81, 92];
+
+    const powerUpCards = [
+      { id: 'wild', name: 'Wild Card', organelle: 'Nucleus', emoji: '🧠', desc: 'Can be used as any power-up card' },
+      { id: 'energy', name: 'Energy Up', organelle: 'Mitochondria', emoji: '⚡', desc: 'Move 3 steps forward' },
+      { id: 'protect', name: 'Protect', organelle: 'Cell Membrane', emoji: '🛡️', desc: 'Block next apoptosis' },
+      { id: 'move', name: 'Move', organelle: 'Endoplasmic Reticulum', emoji: '🔄', desc: 'Roll dice then add 3 steps' },
+      { id: 'transport', name: 'Transport', organelle: 'Golgi Bodies', emoji: '📦', desc: 'Move 10 tiles up' },
+      { id: 'digest', name: 'Digest', organelle: 'Lysosome', emoji: '🍽️', desc: 'Move opponent 3 steps back' },
+      { id: 'green', name: 'Go Green', organelle: 'Chloroplast', emoji: '🌿', desc: 'Move to next 3 green tiles' },
+      { id: 'inherit', name: 'Inherit', organelle: 'DNA', emoji: '🧬', desc: 'Move to opponent\'s position' },
+      { id: 'cytoplasm', name: 'Cytoplasm', organelle: 'Cytoplasm', emoji: '💧', desc: 'Exchange places with opponent' }
+    ];
+
+    // QUESTIONS FROM THE DOCUMENT
+    const cellCycleQuestions = [
+      { q: "In this phase, the cell synthesizes a complete copy of the DNA in its nucleus.", a: ["S phase", "S"] },
+      { q: "In this phase, the cell grows physically and increases the volume of both protein and organelles.", a: ["G1 phase", "G1"] },
+      { q: "During this phase, the cell copies its DNA to make two sister chromatids and replicates its nucleosomes.", a: ["S phase", "S"] },
+      { q: "Cell growth and organization continue in this phase.", a: ["G2 phase", "G2"] },
+      { q: "By making the necessary proteins and organelles, this phase prepares the cells for another round of DNA replication.", a: ["G1 phase", "G1"] },
+      { q: "Cells grow during this phase, make proteins and organelles, and start organizing their contents.", a: ["G2 phase", "G2"] }
+    ];
+
+    const mitosisMeiosisQuestions = [
+      { q: "A process that separates the duplicated genetic material from a parent cell into two identical daughters.", a: ["Anaphase"] },
+      { q: "It is the first phase of mitosis, the process that separates the duplicated genetic material carried in the nucleus of a parent cell into two identical daughter cells.", a: ["Prophase"] },
+      { q: "During this phase, the nucleus dissolves and the cell's chromosomes condense and move together, aligning in the center of the dividing cell.", a: ["Metaphase"] },
+      { q: "During mitosis or meiosis, the chromosomes move from the middle to the ends.", a: ["Anaphase"] },
+      { q: "The longest part of the cell cycle. During this phase, the cell grows and copies its DNA.", a: ["Interphase"] },
+      { q: "The fifth and final phase of mitosis, which separates a cell's duplicated genetic material into two identical daughter cells.", a: ["Telophase"] },
+      { q: "It is the physical process of cell division, which divides the cytoplasm of a parental cell into two daughter cells.", a: ["Cytokinesis"] }
+    ];
+
+    const cellDivisionQuestions = [
+      { q: "It allows the multicellular organism to maintain its tissues, skin cells, and blood is an example?", a: ["Mitosis"] },
+      { q: "During development and growth, it populates an organism's body with new cells, and it replaces old, worn-out ones throughout their lifespan.", a: ["Mitosis"] },
+      { q: "It repairs damaged tissues and keeps cells healthy.", a: ["Mitosis"] },
+      { q: "It is the basis for sexual reproduction in cell division.", a: ["Meiosis"] },
+      { q: "It is a type of cell division that makes four gametes from a parent cell with half of its chromosomes.", a: ["Meiosis"] },
+      { q: "This is sometimes called 'reduction division' because it reduces the number of chromosomes to half.", a: ["Meiosis"] }
+    ];
+
+    const allQuestions = [...cellCycleQuestions, ...mitosisMeiosisQuestions, ...cellDivisionQuestions];
+
+    let gridPositions = {};
+    let cellElements = {};
+
+    // Function to randomize phase tiles
+    function randomizePhaseTiles() {
+      const availableRanges = {
+        g1: [6, 12],
+        s: [27, 37],
+        g2: [52, 62],
+        m: [74, 84]
+      };
+      
+      phaseTiles = {
+        g1: { 
+          start: availableRanges.g1[0] + Math.floor(Math.random() * (availableRanges.g1[1] - availableRanges.g1[0])), 
+          end: 0 
+        },
+        s: { 
+          start: availableRanges.s[0] + Math.floor(Math.random() * (availableRanges.s[1] - availableRanges.s[0])), 
+          end: 0 
+        },
+        g2: { 
+          start: availableRanges.g2[0] + Math.floor(Math.random() * (availableRanges.g2[1] - availableRanges.g2[0])), 
+          end: 0 
+        },
+        m: { 
+          start: availableRanges.m[0] + Math.floor(Math.random() * (availableRanges.m[1] - availableRanges.m[0])), 
+          end: 0 
+        }
+      };
+      
+      phaseTiles.g1.end = phaseTiles.g1.start + 1;
+      phaseTiles.s.end = phaseTiles.s.start + 1;
+      phaseTiles.g2.end = phaseTiles.g2.start + 1;
+      phaseTiles.m.end = phaseTiles.m.start + 1;
+    }
+
+    // Menu Functions
+    function showInstructions() {
+      document.getElementById('mainMenuScreen').classList.add('hidden');
+      document.getElementById('instructionsScreen').classList.remove('hidden');
+    }
+
+    function showPlayerSelection() {
+      document.getElementById('mainMenuScreen').classList.add('hidden');
+      document.getElementById('playerSelectionScreen').classList.remove('hidden');
+    }
+
+    function backToMainMenu() {
+      document.getElementById('instructionsScreen').classList.add('hidden');
+      document.getElementById('playerSelectionScreen').classList.add('hidden');
+      document.getElementById('mainMenuScreen').classList.remove('hidden');
+    }
+
+    window.selectPlayerCount = function(count) {
+      numPlayers = count;
+      
+      document.querySelectorAll('.player-count-btn').forEach(btn => {
+        btn.classList.remove('selected');
+      });
+      
+      event.target.classList.add('selected');
+      
+      document.getElementById('playerSetup').classList.add('active');
+      
+      const playerRows = document.getElementById('playerRows');
+      playerRows.innerHTML = '';
+      
+      positions = {};
+      playerCards = {};
+      playerTypes = {};
+      
+      for (let i = 1; i <= count; i++) {
+        positions[i] = 1;
+        playerCards[i] = [];
+        playerTypes[i] = 'human';
+        
+        const row = document.createElement('div');
+        row.className = 'player-row';
+        row.innerHTML = `
+          <div class="player-label">
+            <div class="player-color-indicator" style="background: ${playerColors[i]}"></div>
+            <span>Player ${i}</span>
+          </div>
+          <div class="player-type-buttons">
+            <button class="type-btn selected" onclick="window.setPlayerType(${i}, 'human')">Human</button>
+            <button class="type-btn" onclick="window.setPlayerType(${i}, 'bot')">Bot</button>
+          </div>
+        `;
+        playerRows.appendChild(row);
+      }
+    }
+
+    window.setPlayerType = function(playerNum, type) {
+      playerTypes[playerNum] = type;
+      
+      const row = document.getElementById('playerRows').children[playerNum - 1];
+      const buttons = row.querySelectorAll('.type-btn');
+      buttons.forEach(btn => {
+        btn.classList.remove('selected');
+        if ((type === 'human' && btn.textContent === 'Human') || 
+            (type === 'bot' && btn.textContent === 'Bot')) {
+          btn.classList.add('selected');
+        }
+      });
+    }
+
+    window.startGame = function() {
+      document.getElementById('playerSelectionScreen').classList.add('hidden');
+      
+      currentPlayer = 1;
+      isAnimating = false;
+      rollBtn.disabled = false;
+      
+      randomizePhaseTiles();
+      
+      createBoard();
+      updatePlayerCards();
+      updateActivePlayer();
+      info.textContent = `Player 1's turn - Roll the dice!`;
+      
+      if (playerTypes[1] === 'bot') {
+        setTimeout(() => botTurn(), 1000);
+      }
+    }
+
+    function createBoard() {
+      board.innerHTML = '';
+      gridPositions = {};
+      cellElements = {};
+      
+      const grid = [];
+      for (let row = 0; row < 10; row++) grid[row] = [];
+
+      let num = 1;
+      for (let row = 9; row >= 0; row--) {
+        if ((9 - row) % 2 === 0) {
+          for (let col = 0; col < 10; col++) {
+            grid[row][col] = num;
+            gridPositions[num] = { row, col };
+            num++;
+          }
+        } else {
+          for (let col = 9; col >= 0; col--) {
+            grid[row][col] = num;
+            gridPositions[num] = { row, col };
+            num++;
+          }
+        }
+      }
+
+      for (let row = 0; row < 10; row++) {
+        for (let col = 0; col < 10; col++) {
+          const cellNum = grid[row][col];
+          const cell = document.createElement("div");
+          cell.classList.add("cell");
+          cell.id = "cell-" + cellNum;
+          cellElements[cellNum] = cell;
+
+          if (greenTiles.includes(cellNum)) cell.classList.add('green');
+          if (cellNum === phaseTiles.g1.start) cell.classList.add('phase-g1');
+          if (cellNum === phaseTiles.s.start) cell.classList.add('phase-s');
+          if (cellNum === phaseTiles.g2.start) cell.classList.add('phase-g2');
+          if (cellNum === phaseTiles.m.start) cell.classList.add('phase-m');
+
+          const number = document.createElement("div");
+          number.classList.add("number");
+          number.textContent = cellNum;
+          cell.appendChild(number);
+
+          const icon = document.createElement("div");
+          icon.classList.add("tile-icon");
+          
+          // Check phase tiles first
+          if (cellNum === phaseTiles.g1.start) {
+            icon.innerHTML = '<div class="phase-badge g1">G1</div>';
+          } else if (cellNum === phaseTiles.s.start) {
+            icon.innerHTML = '<div class="phase-badge s">S</div>';
+          } else if (cellNum === phaseTiles.g2.start) {
+            icon.innerHTML = '<div class="phase-badge g2">G2</div>';
+          } else if (cellNum === phaseTiles.m.start) {
+            icon.innerHTML = '<div class="phase-badge m">M</div>';
+          } else if (ladders[cellNum]) {
+            icon.textContent = "🧬";
+          } else if (apoptosis[cellNum]) {
+            icon.innerHTML = `
+              <div class="apoptosis-icon">
+                <div class="apoptosis-cell">
+                  <div class="apoptosis-bubble bubble-1"></div>
+                  <div class="apoptosis-bubble bubble-2"></div>
+                  <div class="apoptosis-bubble bubble-3"></div>
+                  <div class="apoptosis-bubble bubble-4"></div>
+                  <div class="apoptosis-nucleus"></div>
+                </div>
+              </div>
+            `;
+          } else if (powerUpTiles.includes(cellNum)) {
+            icon.innerHTML = `
+              <div class="power-question-icon">
+                <div class="power-arrow"></div>
+                <div class="power-question-mark">?</div>
+              </div>
+            `;
+          } else if (checkpointTiles.includes(cellNum)) {
+            icon.innerHTML = `
+              <div class="checkpoint-icon">
+                <div class="flag-pole"></div>
+                <div class="flag-base"></div>
+                <div class="flag-fabric"></div>
+              </div>
+            `;
+          }
+          
+          if (icon.textContent || icon.innerHTML) cell.appendChild(icon);
+
+          board.appendChild(cell);
+        }
+      }
+
+      drawLadders();
+      createPlayerPieces();
+    }
+
+    function createPlayerPieces() {
+      for (let i = 1; i <= numPlayers; i++) {
+        const piece = document.createElement("div");
+        piece.classList.add("player", `p${i}`);
+        piece.id = `player-${i}`;
+        piece.style.background = playerColors[i];
+        board.appendChild(piece);
+      }
+      updatePlayerPositions();
+    }
+
+    function updatePlayerPositions() {
+      for (let i = 1; i <= numPlayers; i++) {
+        const piece = document.getElementById(`player-${i}`);
+        if (!piece) continue;
+        
+        const pos = positions[i];
+        const cell = cellElements[pos];
+        if (!cell) continue;
+        
+        const rect = cell.getBoundingClientRect();
+        const boardRect = board.getBoundingClientRect();
+
+        // Get all players on this tile
+        const playersOnTile = Object.keys(positions)
+          .filter(p => positions[p] === pos)
+          .map(Number);
+        const indexOnTile = playersOnTile.indexOf(i);
+        const totalOnTile = playersOnTile.length;
+        
+        // Calculate offset based on number of players
+        let offsetX = 0;
+        let offsetY = 0;
+        
+        if (totalOnTile === 1) {
+          // Center of tile
+          offsetX = 0;
+          offsetY = 0;
+        } else if (totalOnTile === 2) {
+          // Side by side
+          offsetX = indexOnTile === 0 ? -8 : 8;
+          offsetY = 0;
+        } else if (totalOnTile === 3) {
+          // Triangle formation
+          const positions = [
+            { x: 0, y: -8 },   // Top center
+            { x: -8, y: 6 },   // Bottom left
+            { x: 8, y: 6 }     // Bottom right
+          ];
+          offsetX = positions[indexOnTile].x;
+          offsetY = positions[indexOnTile].y;
+        } else if (totalOnTile === 4) {
+          // Square formation
+          const positions = [
+            { x: -6, y: -6 },  // Top left
+            { x: 6, y: -6 },   // Top right
+            { x: -6, y: 6 },   // Bottom left
+            { x: 6, y: 6 }     // Bottom right
+          ];
+          offsetX = positions[indexOnTile].x;
+          offsetY = positions[indexOnTile].y;
+        }
+
+        // Calculate absolute center position
+        const centerX = rect.left - boardRect.left + (rect.width / 2);
+        const centerY = rect.top - boardRect.top + (rect.height / 2);
+        
+        // Apply offset
+        piece.style.left = (centerX + offsetX) + 'px';
+        piece.style.top = (centerY + offsetY) + 'px';
+      }
+    }
+
+    function drawLadders() {
+      Object.entries(ladders).forEach(([start, end]) => {
+        drawDNALadder(parseInt(start), parseInt(end));
+      });
+    }
+
+    function drawDNALadder(start, end) {
+      const startCell = cellElements[start];
+      const endCell = cellElements[end];
+      const startRect = startCell.getBoundingClientRect();
+      const endRect = endCell.getBoundingClientRect();
+      const boardRect = board.getBoundingClientRect();
+
+      const startX = startRect.left - boardRect.left + startRect.width / 2;
+      const startY = startRect.top - boardRect.top + startRect.height / 2;
+      const endX = endRect.left - boardRect.left + endRect.width / 2;
+      const endY = endRect.top - boardRect.top + endRect.height / 2;
+
+      const length = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
+      const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+
+      const ladder = document.createElement("div");
+      ladder.className = "ladder";
+      ladder.style.position = "absolute";
+      ladder.style.left = startX + "px";
+      ladder.style.top = startY + "px";
+      ladder.style.width = length + "px";
+      ladder.style.height = "40px";
+      ladder.style.transform = `rotate(${angle}deg)`;
+      ladder.style.transformOrigin = "0 50%";
+
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", `0 0 ${length} 40`);
+      svg.setAttribute("preserveAspectRatio", "none");
+      svg.style.width = "100%";
+      svg.style.height = "100%";
+      svg.style.overflow = "visible";
+
+      const numCycles = Math.max(2, length / 60);
+      const amplitude = 12;
+      const centerY = 20;
+
+      let pathDataLeft = `M 0 ${centerY}`;
+      for (let x = 0; x <= length; x += 2) {
+        const y = centerY + amplitude * Math.sin((x / length) * numCycles * Math.PI * 2);
+        pathDataLeft += ` L ${x} ${y}`;
+      }
+
+      let pathDataRight = `M 0 ${centerY}`;
+      for (let x = 0; x <= length; x += 2) {
+        const y = centerY - amplitude * Math.sin((x / length) * numCycles * Math.PI * 2);
+        pathDataRight += ` L ${x} ${y}`;
+      }
+
+      const pathLeft = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathLeft.setAttribute("d", pathDataLeft);
+      pathLeft.setAttribute("stroke", "#4a90e2");
+      pathLeft.setAttribute("stroke-width", "4");
+      pathLeft.setAttribute("fill", "none");
+      pathLeft.setAttribute("stroke-linecap", "round");
+      pathLeft.style.filter = "drop-shadow(0 2px 3px rgba(0,0,0,0.3))";
+      svg.appendChild(pathLeft);
+
+      const pathRight = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathRight.setAttribute("d", pathDataRight);
+      pathRight.setAttribute("stroke", "#50c878");
+      pathRight.setAttribute("stroke-width", "4");
+      pathRight.setAttribute("fill", "none");
+      pathRight.setAttribute("stroke-linecap", "round");
+      pathRight.style.filter = "drop-shadow(0 2px 3px rgba(0,0,0,0.3))";
+      svg.appendChild(pathRight);
+
+      const numBonds = Math.floor(length / 15);
+      for (let i = 0; i <= numBonds; i++) {
+        const x = (i / numBonds) * length;
+        const y1 = centerY + amplitude * Math.sin((x / length) * numCycles * Math.PI * 2);
+        const y2 = centerY - amplitude * Math.sin((x / length) * numCycles * Math.PI * 2);
+
+        const bond = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        bond.setAttribute("x1", x);
+        bond.setAttribute("y1", y1);
+        bond.setAttribute("x2", x);
+        bond.setAttribute("y2", y2);
+        bond.setAttribute("stroke", "#9b8ce6");
+        bond.setAttribute("stroke-width", "2");
+        bond.setAttribute("opacity", "0.5");
+        svg.appendChild(bond);
+
+        const circleLeft = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circleLeft.setAttribute("cx", x);
+        circleLeft.setAttribute("cy", y1);
+        circleLeft.setAttribute("r", "4");
+        circleLeft.setAttribute("fill", "#4a90e2");
+        circleLeft.style.filter = "drop-shadow(0 1px 2px rgba(0,0,0,0.3))";
+        svg.appendChild(circleLeft);
+
+        const circleRight = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circleRight.setAttribute("cx", x);
+        circleRight.setAttribute("cy", y2);
+        circleRight.setAttribute("r", "4");
+        circleRight.setAttribute("fill", "#50c878");
+        circleRight.style.filter = "drop-shadow(0 1px 2px rgba(0,0,0,0.3))";
+        svg.appendChild(circleRight);
+      }
+
+      ladder.appendChild(svg);
+      board.appendChild(ladder);
+    }
+
+    async function rollDice() {
+      if (isAnimating) return;
+      
+      const dice = Math.floor(Math.random() * 6) + 1;
+      diceDisplay.textContent = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][dice - 1];
+      info.textContent = `Player ${currentPlayer} rolled ${dice}`;
+      
+      rollBtn.disabled = true;
+      isAnimating = true;
+
+      let newPosition = positions[currentPlayer] + dice;
+      
+      if (newPosition > 100) {
+        info.textContent = `Can't move! Need exactly ${100 - positions[currentPlayer]} to win`;
+        await sleep(2000);
+        nextPlayer();
+        return;
+      }
+
+      await movePlayerStepByStep(dice);
+    }
+
+    function nextPlayer() {
+      currentPlayer++;
+      if (currentPlayer > numPlayers) {
+        currentPlayer = 1;
+      }
+      updateActivePlayer();
+      info.textContent = `Player ${currentPlayer}'s turn`;
+      rollBtn.disabled = false;
+      isAnimating = false;
+      
+      if (playerTypes[currentPlayer] === 'bot') {
+        setTimeout(() => botTurn(), 1500);
+      }
+    }
+
+    async function botTurn() {
+      if (isAnimating) return;
+      await sleep(500);
+      rollDice();
+    }
+
+    async function movePlayerStepByStep(steps) {
+      const start = positions[currentPlayer];
+      
+      for (let i = 1; i <= steps; i++) {
+        await sleep(250);
+        positions[currentPlayer] = start + i;
+        updatePlayerPositions();
+      }
+
+      await sleep(400);
+      await handleTileLanding();
+    }
+
+    async function handleTileLanding() {
+      const pos = positions[currentPlayer];
+
+      // Check for phase tiles
+      let phaseKey = null;
+      if (pos === phaseTiles.g1.start) phaseKey = 'g1';
+      else if (pos === phaseTiles.s.start) phaseKey = 's';
+      else if (pos === phaseTiles.g2.start) phaseKey = 'g2';
+      else if (pos === phaseTiles.m.start) phaseKey = 'm';
+
+      if (phaseKey) {
+        const phaseName = phaseKey.toUpperCase();
+        await askQuestion(`${phaseName} Phase!`, async (correct) => {
+          if (correct) {
+            info.textContent = `Correct! Moving to tile ${phaseTiles[phaseKey].end}`;
+            await sleep(1000);
+            positions[currentPlayer] = phaseTiles[phaseKey].end;
+            updatePlayerPositions();
+            await sleep(500);
+          } else {
+            info.textContent = 'Wrong answer! Staying at same tile';
+            await sleep(1000);
+          }
+        });
+      }
+
+      // Check for checkpoint
+      if (checkpointTiles.includes(pos)) {
+        await askQuestion('Cell Cycle Checkpoint! 🔬', async (correct) => {
+          if (!correct) {
+            info.textContent = 'Wrong answer! Moving 3 steps back';
+            await sleep(1000);
+            positions[currentPlayer] = Math.max(1, positions[currentPlayer] - 3);
+            updatePlayerPositions();
+            await sleep(500);
+          } else {
+            info.textContent = 'Correct! Continue playing';
+            await sleep(1000);
+          }
+        });
+      }
+
+      // Check for power-up question
+      if (powerUpTiles.includes(pos)) {
+        await askQuestion('Power-Up Question! ⚡', async (correct) => {
+          if (correct) {
+            await showPowerUpSelection();
+          } else {
+            info.textContent = 'Wrong answer, but no penalty!';
+            await sleep(1000);
+          }
+        });
+      }
+
+      // Check for apoptosis
+      const hasProtect = playerCards[currentPlayer].some(c => c.id === 'protect' && !c.used);
+      if (apoptosis[pos] && !hasProtect) {
+        info.textContent = `Apoptosis! Moving down to tile ${apoptosis[pos]}`;
+        await sleep(1000);
+        positions[currentPlayer] = apoptosis[pos];
+        updatePlayerPositions();
+        await sleep(500);
+      } else if (apoptosis[pos] && hasProtect) {
+        info.textContent = 'Apoptosis blocked by Cell Membrane! 🛡️';
+        const card = playerCards[currentPlayer].find(c => c.id === 'protect' && !c.used);
+        card.used = true;
+        updatePlayerCards();
+        await sleep(1500);
+      }
+
+      // Check for ladder
+      if (ladders[pos]) {
+        info.textContent = `DNA Ladder! 🧬 Climbing to ${ladders[pos]}`;
+        await sleep(1000);
+        await moveDirectly(ladders[pos]);
+      }
+
+      // Check for win
+      if (positions[currentPlayer] > 100) {
+        info.textContent = `🎉🧬 Player ${currentPlayer} WINS! 🧬🎉`;
+        const playerPiece = document.getElementById(`player-${currentPlayer}`);
+        playerPiece.classList.add('winning');
+        rollBtn.disabled = true;
+        isAnimating = false;
+        
+        // Show victory modal
+        await sleep(1000);
+        const winnerName = playerTypes[currentPlayer] === 'bot' ? `Player ${currentPlayer} (Bot)` : `Player ${currentPlayer}`;
+        document.getElementById('winnerText').textContent = `${winnerName} Wins!`;
+        document.getElementById('victoryModal').classList.add('show');
+        return;
+      }
+
+      await sleep(1000);
+      nextPlayer();
+    }
+
+    async function moveDirectly(to) {
+      const from = positions[currentPlayer];
+      const direction = to > from ? 1 : -1;
+      const distance = Math.abs(to - from);
+      
+      // Move step by step through actual tiles
+      const stepsToAnimate = Math.min(distance, 15); // Limit animation steps for very long distances
+      const stepSize = distance / stepsToAnimate;
+      
+      for (let i = 1; i <= stepsToAnimate; i++) {
+        await sleep(100);
+        const nextPos = Math.round(from + (direction * stepSize * i));
+        positions[currentPlayer] = Math.min(100, Math.max(1, nextPos));
+        updatePlayerPositions();
+      }
+      
+      // Ensure we end up at exactly the target position
+      positions[currentPlayer] = to;
+      updatePlayerPositions();
+      await sleep(200);
+    }
+
+    function askQuestion(title, callback) {
+      return new Promise((resolve) => {
+        const question = allQuestions[Math.floor(Math.random() * allQuestions.length)];
+        currentQuestion = question;
+        questionCallback = (correct) => {
+          callback(correct);
+          resolve();
+        };
+
+        if (playerTypes[currentPlayer] === 'bot') {
+          const botCorrect = Math.random() > 0.3;
+          setTimeout(() => {
+            info.textContent = botCorrect ? `Bot answered correctly!` : `Bot answered incorrectly!`;
+            setTimeout(() => {
+              if (questionCallback) {
+                questionCallback(botCorrect);
+                questionCallback = null;
+              }
+            }, 1000);
+          }, 1500);
+          return;
+        }
+
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('questionText').textContent = question.q;
+        document.getElementById('answerInput').value = '';
+        document.getElementById('questionModal').classList.add('show');
+        document.getElementById('answerInput').focus();
+      });
+    }
+
+    function submitAnswer() {
+      const answer = document.getElementById('answerInput').value.trim().toLowerCase();
+      const correctAnswers = currentQuestion.a.map(a => a.toLowerCase());
+      const correct = correctAnswers.some(correctAns => 
+        answer.includes(correctAns) || correctAns.includes(answer)
+      );
+      closeModal();
+      if (questionCallback) {
+        questionCallback(correct);
+        questionCallback = null;
+      }
+    }
+
+    function skipQuestion() {
+      closeModal();
+      if (questionCallback) {
+        questionCallback(false);
+        questionCallback = null;
+      }
+    }
+
+    function closeModal() {
+      document.querySelectorAll('.modal').forEach(m => m.classList.remove('show'));
+    }
+
+    async function showPowerUpSelection() {
+      return new Promise((resolve) => {
+        if (playerTypes[currentPlayer] === 'bot') {
+          const availableCards = [...powerUpCards];
+          const randomCard = availableCards[Math.floor(Math.random() * availableCards.length)];
+          playerCards[currentPlayer].push({...randomCard, used: false});
+          updatePlayerCards();
+          info.textContent = `Bot received ${randomCard.name}!`;
+          setTimeout(resolve, 1000);
+          return;
+        }
+        
+        const modal = document.getElementById('powerUpModal');
+        const options = document.getElementById('powerUpOptions');
+        options.innerHTML = '';
+
+        const availableCards = [...powerUpCards];
+        const randomCards = availableCards.sort(() => Math.random() - 0.5).slice(0, 3);
+
+        randomCards.forEach(card => {
+          const div = document.createElement('div');
+          div.className = 'power-card-option';
+          div.innerHTML = `
+            <div class="power-card-option-emoji">${card.emoji}</div>
+            <div class="power-card-option-name">${card.name}</div>
+            <div style="font-size: 10px; color: #888; margin-top: 5px;">${card.organelle}</div>
+          `;
+          div.onclick = () => {
+            playerCards[currentPlayer].push({...card, used: false});
+            updatePlayerCards();
+            modal.classList.remove('show');
+            info.textContent = `Received ${card.name}!`;
+            resolve();
+          };
+          options.appendChild(div);
+        });
+
+        modal.classList.add('show');
+      });
+    }
+
+    function updatePlayerCards() {
+      const container = document.getElementById('player-cards');
+      container.innerHTML = '';
+
+      const cards = playerCards[currentPlayer];
+      if (cards.length === 0) {
+        container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px; font-size: clamp(11px, 2vw, 13px);">No power-up cards yet.<br>Land on ⚡ tiles to earn cards!</p>';
+        return;
+      }
+
+      cards.forEach((card, index) => {
+        const div = document.createElement('div');
+        div.className = 'power-card' + (card.used ? ' used' : '');
+        div.innerHTML = `
+          <div class="power-card-name">${card.emoji} ${card.name}</div>
+          <div class="power-card-desc">${card.desc}</div>
+          ${!card.used && !isAnimating ? `<button class="use-card-btn" onclick="useCard(${index})">Use Card</button>` : 
+            card.used ? '<span style="color: #666; font-size: 11px;">✓ Used</span>' : ''}
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function useCard(index) {
+      const card = playerCards[currentPlayer][index];
+      if (card.used || isAnimating) return;
+
+      const modal = document.getElementById('cardUseModal');
+      const title = document.getElementById('cardUseTitle');
+      const text = document.getElementById('cardUseText');
+      const buttons = document.getElementById('cardUseButtons');
+
+      title.textContent = `${card.emoji} ${card.name}`;
+      text.textContent = card.desc;
+      buttons.innerHTML = '';
+
+      if (card.id === 'wild') {
+        powerUpCards.filter(c => c.id !== 'wild').forEach(c => {
+          const btn = document.createElement('button');
+          btn.textContent = `${c.emoji} ${c.name}`;
+          btn.onclick = () => {
+            modal.classList.remove('show');
+            const tempCard = {...c, used: false};
+            playerCards[currentPlayer].push(tempCard);
+            card.used = true;
+            updatePlayerCards();
+            setTimeout(() => useCard(playerCards[currentPlayer].length - 1), 100);
+          };
+          buttons.appendChild(btn);
+        });
+      } else if (card.id === 'energy') {
+        const btn = document.createElement('button');
+        btn.textContent = 'Move 3 Steps Forward';
+        btn.onclick = () => {
+          positions[currentPlayer] = Math.min(100, positions[currentPlayer] + 3);
+          updatePlayerPositions();
+          card.used = true;
+          updatePlayerCards();
+          modal.classList.remove('show');
+          info.textContent = 'Moved 3 steps forward!';
+        };
+        buttons.appendChild(btn);
+      } else if (card.id === 'move') {
+        const btn = document.createElement('button');
+        btn.textContent = 'Roll Dice + 3 Steps';
+        btn.onclick = async () => {
+          modal.classList.remove('show');
+          const dice = Math.floor(Math.random() * 6) + 1;
+          diceDisplay.textContent = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][dice - 1];
+          const totalMove = dice + 3;
+          positions[currentPlayer] = Math.min(100, positions[currentPlayer] + totalMove);
+          updatePlayerPositions();
+          card.used = true;
+          updatePlayerCards();
+          info.textContent = `Rolled ${dice} + 3 = ${totalMove} steps!`;
+        };
+        buttons.appendChild(btn);
+      } else if (card.id === 'transport') {
+        const btn = document.createElement('button');
+        btn.textContent = 'Move 10 Tiles Up';
+        btn.onclick = () => {
+          positions[currentPlayer] = Math.min(100, positions[currentPlayer] + 10);
+          updatePlayerPositions();
+          card.used = true;
+          updatePlayerCards();
+          modal.classList.remove('show');
+          info.textContent = 'Transported 10 tiles up!';
+        };
+        buttons.appendChild(btn);
+      } else if (card.id === 'digest') {
+        for (let p = 1; p <= numPlayers; p++) {
+          if (p !== currentPlayer) {
+            const btn = document.createElement('button');
+            btn.textContent = `Digest Player ${p}`;
+            btn.onclick = () => {
+              positions[p] = Math.max(1, positions[p] - 3);
+              updatePlayerPositions();
+              card.used = true;
+              updatePlayerCards();
+              modal.classList.remove('show');
+              info.textContent = `Player ${p} moved back 3 steps!`;
+            };
+            buttons.appendChild(btn);
+          }
+        }
+      } else if (card.id === 'green') {
+        const currentPos = positions[currentPlayer];
+        const nextGreen = greenTiles.filter(t => t > currentPos).slice(0, 3);
+        if (nextGreen.length > 0) {
+          const targetTile = nextGreen[nextGreen.length - 1];
+          const btn = document.createElement('button');
+          btn.textContent = `Go to tile ${targetTile}`;
+          btn.onclick = () => {
+            positions[currentPlayer] = targetTile;
+            updatePlayerPositions();
+            card.used = true;
+            updatePlayerCards();
+            modal.classList.remove('show');
+            info.textContent = `Moved to green tile ${targetTile}!`;
+          };
+          buttons.appendChild(btn);
+        } else {
+          text.textContent = 'No green tiles ahead!';
+        }
+      } else if (card.id === 'inherit') {
+        for (let p = 1; p <= numPlayers; p++) {
+          if (p !== currentPlayer) {
+            const btn = document.createElement('button');
+            btn.textContent = `Inherit Player ${p} (${positions[p]})`;
+            btn.onclick = () => {
+              positions[currentPlayer] = positions[p];
+              updatePlayerPositions();
+              card.used = true;
+              updatePlayerCards();
+              modal.classList.remove('show');
+              info.textContent = `Inherited Player ${p}'s position!`;
+            };
+            buttons.appendChild(btn);
+          }
+        }
+      } else if (card.id === 'cytoplasm') {
+        for (let p = 1; p <= numPlayers; p++) {
+          if (p !== currentPlayer) {
+            const btn = document.createElement('button');
+            btn.textContent = `Exchange with Player ${p}`;
+            btn.onclick = () => {
+              [positions[currentPlayer], positions[p]] = [positions[p], positions[currentPlayer]];
+              updatePlayerPositions();
+              card.used = true;
+              updatePlayerCards();
+              modal.classList.remove('show');
+              info.textContent = `Exchanged with Player ${p}!`;
+            };
+            buttons.appendChild(btn);
+          }
+        }
+      }
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.style.background = 'rgba(255,255,255,0.1)';
+      cancelBtn.onclick = () => modal.classList.remove('show');
+      buttons.appendChild(cancelBtn);
+
+      modal.classList.add('show');
+    }
+
+    function updateActivePlayer() {
+      for (let i = 1; i <= 4; i++) {
+        const card = document.getElementById(`p${i}-card`);
+        if (card) {
+          if (i <= numPlayers) {
+            card.style.display = 'flex';
+            card.classList.toggle('active', currentPlayer === i);
+            const nameSpan = card.querySelector('span');
+            nameSpan.textContent = playerTypes[i] === 'bot' ? `Player ${i} (Bot)` : `Player ${i}`;
+          } else {
+            card.style.display = 'none';
+          }
+        }
+      }
+      updatePlayerCards();
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function resetGame() {
+      document.getElementById('mainMenuScreen').classList.remove('hidden');
+      document.getElementById('playerSelectionScreen').classList.add('hidden');
+      document.getElementById('instructionsScreen').classList.add('hidden');
+      board.innerHTML = '';
+      positions = { 1: 1, 2: 1 };
+      currentPlayer = 1;
+      isAnimating = false;
+      playerCards = { 1: [], 2: [] };
+      rollBtn.disabled = false;
+      diceDisplay.textContent = "🎲";
+      info.textContent = "Select New Game to start";
+      closeModal();
+      updatePlayerCards();
+    }
+
+    document.getElementById('answerInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') submitAnswer();
+    });
+
+    updatePlayerCards();
+  </script>
+
+</body>
+</html>
