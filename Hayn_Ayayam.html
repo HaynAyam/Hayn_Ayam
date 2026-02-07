@@ -1831,7 +1831,175 @@
     async function botTurn() {
       if (isAnimating) return;
       await sleep(500);
+      
+      // Bot AI: Check if bot should use a power-up card
+      await botConsiderUsingPowerUp();
+      
+      await sleep(500);
       rollDice();
+    }
+
+    async function botConsiderUsingPowerUp() {
+      const botCards = playerCards[currentPlayer];
+      const unusedCards = botCards.filter(c => !c.used);
+      
+      if (unusedCards.length === 0) return;
+      
+      const currentPos = positions[currentPlayer];
+      
+      // Bot strategy: Use cards if they're beneficial
+      for (let i = 0; i < botCards.length; i++) {
+        const card = botCards[i];
+        if (card.used) continue;
+        
+        // Random chance to use card (70% chance to consider using it)
+        if (Math.random() > 0.7) continue;
+        
+        let shouldUse = false;
+        let targetPlayer = null;
+        
+        switch(card.id) {
+          case 'energy':
+            // Use if it gets us closer to 100
+            shouldUse = currentPos + 3 <= 100;
+            break;
+            
+          case 'transport':
+            // Use if it gets us closer to 100
+            shouldUse = currentPos + 10 <= 100;
+            break;
+            
+          case 'move':
+            // Use if beneficial
+            shouldUse = currentPos < 90;
+            break;
+            
+          case 'green':
+            // Use if there are green tiles ahead
+            const nextGreen = greenTiles.filter(t => t > currentPos).slice(0, 3);
+            shouldUse = nextGreen.length > 0;
+            break;
+            
+          case 'digest':
+            // Use on the player who's ahead
+            let maxPos = 0;
+            for (let p = 1; p <= numPlayers; p++) {
+              if (p !== currentPlayer && positions[p] > maxPos) {
+                maxPos = positions[p];
+                targetPlayer = p;
+              }
+            }
+            shouldUse = targetPlayer && positions[targetPlayer] > currentPos;
+            break;
+            
+          case 'inherit':
+            // Inherit position from player who's furthest ahead
+            let bestPos = currentPos;
+            for (let p = 1; p <= numPlayers; p++) {
+              if (p !== currentPlayer && positions[p] > bestPos) {
+                bestPos = positions[p];
+                targetPlayer = p;
+              }
+            }
+            shouldUse = targetPlayer && positions[targetPlayer] > currentPos + 10;
+            break;
+            
+          case 'cytoplasm':
+            // Swap with player who's furthest ahead
+            let swapPos = currentPos;
+            for (let p = 1; p <= numPlayers; p++) {
+              if (p !== currentPlayer && positions[p] > swapPos) {
+                swapPos = positions[p];
+                targetPlayer = p;
+              }
+            }
+            shouldUse = targetPlayer && positions[targetPlayer] > currentPos + 10;
+            break;
+        }
+        
+        if (shouldUse) {
+          await botExecuteCard(i, card, targetPlayer);
+          await sleep(1000);
+          return; // Use only one card per turn
+        }
+      }
+    }
+
+    async function botExecuteCard(index, card, targetPlayer) {
+      info.textContent = `Bot is using ${card.name}...`;
+      await sleep(800);
+      
+      switch(card.id) {
+        case 'energy':
+          positions[currentPlayer] = Math.min(100, positions[currentPlayer] + 3);
+          updatePlayerPositions();
+          card.used = true;
+          updatePlayerCards();
+          info.textContent = `Bot used ${card.name} and moved 3 steps forward!`;
+          break;
+          
+        case 'transport':
+          positions[currentPlayer] = Math.min(100, positions[currentPlayer] + 10);
+          updatePlayerPositions();
+          card.used = true;
+          updatePlayerCards();
+          info.textContent = `Bot used ${card.name} and moved 10 tiles up!`;
+          break;
+          
+        case 'move':
+          const dice = Math.floor(Math.random() * 6) + 1;
+          diceDisplay.textContent = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'][dice - 1];
+          const totalMove = dice + 3;
+          positions[currentPlayer] = Math.min(100, positions[currentPlayer] + totalMove);
+          updatePlayerPositions();
+          card.used = true;
+          updatePlayerCards();
+          info.textContent = `Bot used ${card.name}: Rolled ${dice} + 3 = ${totalMove} steps!`;
+          break;
+          
+        case 'green':
+          const currentPos = positions[currentPlayer];
+          const nextGreen = greenTiles.filter(t => t > currentPos).slice(0, 3);
+          if (nextGreen.length > 0) {
+            const targetTile = nextGreen[nextGreen.length - 1];
+            positions[currentPlayer] = targetTile;
+            updatePlayerPositions();
+            card.used = true;
+            updatePlayerCards();
+            info.textContent = `Bot used ${card.name} and moved to green tile ${targetTile}!`;
+          }
+          break;
+          
+        case 'digest':
+          if (targetPlayer) {
+            positions[targetPlayer] = Math.max(1, positions[targetPlayer] - 3);
+            updatePlayerPositions();
+            card.used = true;
+            updatePlayerCards();
+            info.textContent = `Bot used ${card.name} on Player ${targetPlayer}!`;
+          }
+          break;
+          
+        case 'inherit':
+          if (targetPlayer) {
+            positions[currentPlayer] = positions[targetPlayer];
+            updatePlayerPositions();
+            card.used = true;
+            updatePlayerCards();
+            info.textContent = `Bot used ${card.name} and inherited Player ${targetPlayer}'s position!`;
+          }
+          break;
+          
+        case 'cytoplasm':
+          if (targetPlayer) {
+            [positions[currentPlayer], positions[targetPlayer]] = [positions[targetPlayer], positions[currentPlayer]];
+            updatePlayerPositions();
+            card.used = true;
+            updatePlayerCards();
+            info.textContent = `Bot used ${card.name} and swapped with Player ${targetPlayer}!`;
+          }
+          break;
+      }
     }
 
     async function movePlayerStepByStep(steps) {
