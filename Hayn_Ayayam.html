@@ -2271,6 +2271,8 @@
       container.innerHTML = '';
 
       const cards = playerCards[currentPlayer];
+      const isHuman = playerTypes[currentPlayer] === 'human';
+      
       if (cards.length === 0) {
         container.innerHTML = '<p style="color: #888; text-align: center; padding: 20px; font-size: clamp(11px, 2vw, 13px);">No power-up cards yet.<br>Land on ⚡ tiles to earn cards!</p>';
         return;
@@ -2282,8 +2284,9 @@
         div.innerHTML = `
           <div class="power-card-name">${card.emoji} ${card.name}</div>
           <div class="power-card-desc">${card.desc}</div>
-          ${!card.used ? `<button class="use-card-btn" onclick="useCard(${index})">Use Card</button>` : 
-            '<span style="color: #666; font-size: 11px;">✓ Used</span>'}
+          ${!card.used && isHuman ? `<button class="use-card-btn" onclick="useCard(${index})">Use Card</button>` : 
+            card.used ? '<span style="color: #666; font-size: 11px;">✓ Used</span>' : 
+            '<span style="color: #888; font-size: 11px;">Bot Card</span>'}
         `;
         container.appendChild(div);
       });
